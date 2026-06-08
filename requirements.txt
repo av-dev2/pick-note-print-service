@@ -1,0 +1,5 @@
+flask>=3.0
+apscheduler>=3.10
+requests>=2.31
+python-escpos>=3.1
+pywin32>=306; sys_platform == "win32"
