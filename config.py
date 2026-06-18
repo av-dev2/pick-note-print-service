@@ -16,7 +16,6 @@ CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.j
 DEFAULT_CONFIG: dict[str, Any] = {
     "frappe_url": "",
     "api_token": "",
-    "branch": "",
     "printer_name": "",
     "printer_type": "windows",     # "usb", "network", "serial", or "windows"
     "printer_address": "",         # IP:port for network, COM port for serial
@@ -112,7 +111,7 @@ def save_config(data: dict[str, Any]) -> dict[str, Any]:
     merged["auto_cut"] = bool(merged.get("auto_cut", True))
 
     # Strip whitespace from string fields
-    for key in ("frappe_url", "api_token", "branch",
+    for key in ("frappe_url", "api_token",
                 "printer_name", "printer_type", "printer_address"):
         if isinstance(merged.get(key), str):
             merged[key] = merged[key].strip()
@@ -148,7 +147,7 @@ def is_configured() -> bool:
     Check whether the minimum required settings are present.
 
     The service needs at least a Frappe URL, API credentials,
-    a branch name, and a printer name to operate.
+    and a printer name to operate.
 
     Returns:
         bool: True if the essential fields are populated.
@@ -157,6 +156,5 @@ def is_configured() -> bool:
     return all([
         cfg.get("frappe_url"),
         cfg.get("api_token"),
-        cfg.get("branch"),
         cfg.get("printer_name"),
     ])
