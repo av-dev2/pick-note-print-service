@@ -164,44 +164,7 @@ def api_list_printers():
         return jsonify({"error": str(exc)}), 500
 
 
-# --------------------------------------------------------------------------- #
-#  Routes — Branches
-# --------------------------------------------------------------------------- #
 
-@app.route("/api/branches", methods=["GET", "POST"])
-def api_get_branches():
-    """Fetch branches from the Frappe site.
-
-    Accepts POST with {frappe_url, api_token} from the form (before saving),
-    or GET using the saved config credentials.
-    """
-    try:
-        if request.method == "POST":
-            data = request.get_json(force=True) or {}
-            url = data.get("frappe_url", "").strip().rstrip("/")
-            token = data.get("api_token", "").strip()
-
-            # If the token is masked, fall back to the stored one
-            if token.startswith("****"):
-                existing = config.get_config()
-                token = existing.get("api_token", "")
-        else:
-            cfg = config.get_config()
-            url = cfg.get("frappe_url", "")
-            token = cfg.get("api_token", "")
-
-        if not all([url, token]):
-            return jsonify({"error": "Frappe credentials not configured."}), 400
-
-        client = FrappeClient(url, token)
-        branches = client.get_branches()
-        return jsonify({"branches": branches})
-
-    except (ConnectionError, RuntimeError, ValueError) as exc:
-        return jsonify({"error": str(exc)}), 502
-    except Exception as exc:
-        logger.exception("Failed to fetch branches.")
-        return jsonify({"error": str(exc)}), 500
 
 
 
@@ -220,7 +183,7 @@ def api_service_start():
         if not config.is_configured():
             return jsonify({
                 "error": "Service is not fully configured. "
-                         "Please set Frappe URL, API credentials, branch, and printer."
+                         "Please set Frappe URL, API credentials, and printer."
             }), 400
 
         # Mark auto-start so the worker starts on boot
