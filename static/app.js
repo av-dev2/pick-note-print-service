@@ -21,8 +21,7 @@ const DOM = {
     btnTestConn:      $id("btn-test-connection"),
     connResult:       $id("connection-result"),
 
-    // Branch & layout
-    branchSelect:     $id("branch-select"),
+    // Layout
     paperWidth:       $id("paper-width"),
     pollInterval:     $id("poll-interval"),
     feedLines:        $id("feed-lines"),
@@ -165,15 +164,7 @@ async function loadConfig() {
         DOM.printerAddress.value = data.printer_address || "";
         updatePrinterUI();
 
-        // Branch — set a temporary option if we have a stored branch
-        if (data.branch) {
-            const opt = document.createElement("option");
-            opt.value = data.branch;
-            opt.textContent = data.branch;
-            opt.selected = true;
-            DOM.branchSelect.innerHTML = "";
-            DOM.branchSelect.appendChild(opt);
-        }
+
 
         // Printer name — set a temporary option if stored
         if (data.printer_name) {
@@ -198,7 +189,6 @@ async function saveConfig() {
         const body = {
             frappe_url:           DOM.frappeUrl.value.trim(),
             api_token:            DOM.apiToken.value.trim(),
-            branch:               DOM.branchSelect.value,
             paper_width:          parseInt(DOM.paperWidth.value, 10) || 42,
             feed_lines:           parseInt(DOM.feedLines.value, 10) || 3,
             auto_cut:             DOM.autoCut.checked,
@@ -257,9 +247,6 @@ async function testConnection() {
         DOM.connResult.className = "result-text success";
         showToast(`Connected as ${data.user}`, "success");
 
-        // Auto-fetch branches on successful connection
-        await fetchBranches();
-
     } catch (err) {
         DOM.connResult.textContent = `✗ ${err.message}`;
         DOM.connResult.className = "result-text error";
@@ -269,46 +256,6 @@ async function testConnection() {
     }
 }
 
-
-// ==========================================================================
-//  Branches
-// ==========================================================================
-
-async function fetchBranches() {
-    try {
-        const data = await apiFetch("/api/branches", {
-            method: "POST",
-            body: JSON.stringify({
-                frappe_url: DOM.frappeUrl.value.trim(),
-                api_token:  DOM.apiToken.value.trim(),
-            }),
-        });
-        const branches = data.branches || [];
-        const currentBranch = DOM.branchSelect.value;
-
-        DOM.branchSelect.innerHTML = "";
-
-        if (branches.length === 0) {
-            const opt = document.createElement("option");
-            opt.value = "";
-            opt.textContent = "— No branches found —";
-            DOM.branchSelect.appendChild(opt);
-            return;
-        }
-
-        for (const branch of branches) {
-            const name = typeof branch === "string" ? branch : branch.name;
-            const opt = document.createElement("option");
-            opt.value = name;
-            opt.textContent = name;
-            if (name === currentBranch) opt.selected = true;
-            DOM.branchSelect.appendChild(opt);
-        }
-
-    } catch (err) {
-        showToast(`Failed to load branches: ${err.message}`, "error");
-    }
-}
 
 
 // ==========================================================================
