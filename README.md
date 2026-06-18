@@ -50,7 +50,7 @@ A standalone Python service that **polls a remote Frappe site for unprinted Pick
 
 **How it works:**
 
-1. The service polls Frappe every N seconds for unprinted Pick Notes filtered by branch.
+1. The service polls Frappe every N seconds for unprinted Pick Notes.
 2. For each unprinted Pick Note, it fetches the rendered print format output.
 3. HTML content is stripped and converted to plain text suitable for thermal printers.
 4. The plain text is encoded and sent to the configured thermal printer.
@@ -76,8 +76,7 @@ amex.amex.utils.pick_note_print_api
 ```
 
 This module should expose these whitelisted methods:
-- `get_branches` — Returns list of branches
-- `get_unprinted_pick_notes` — Returns unprinted Pick Notes for a branch
+- `get_unprinted_pick_notes` — Returns unprinted Pick Notes
 - `get_pick_note_print_raw` — Returns rendered print format output
 - `mark_pick_note_printed` — Marks a Pick Note as printed
 
@@ -147,7 +146,6 @@ All settings are stored in `config.json` in the application directory. You can c
 | `frappe_url` | string | `""` | Root URL of your Frappe site (e.g. `https://erp.example.com`) |
 | `api_key` | string | `""` | Frappe API key |
 | `api_secret` | string | `""` | Frappe API secret |
-| `branch` | string | `""` | Branch name to filter Pick Notes |
 | `printer_name` | string | `""` | Name of the selected printer |
 | `printer_type` | string | `"windows"` | `"windows"`, `"network"`, `"serial"`, or `"cups"` |
 | `printer_address` | string | `""` | IP:port (network) or device path (serial) |
@@ -270,7 +268,7 @@ sudo journalctl -u pick-note-print.service -f
 The web dashboard is accessible at **http://localhost:5555** and provides:
 
 - **Connection Settings** — Configure and test the Frappe site connection
-- **Branch & Print Settings** — Select the branch to filter Pick Notes, optional print format, and poll interval
+- **Print Settings** — Configure print layout settings, optional print format, and poll interval
 - **Printer Settings** — Select printer type, enumerate local printers, test printing
 - **Service Controls** — Start/Stop the background worker, view stats
 - **Print Log** — Real-time table of recent print jobs with status and timestamps
@@ -288,7 +286,6 @@ The log panel auto-refreshes every 10 seconds.
 | `POST` | `/api/config` | Save configuration |
 | `POST` | `/api/test-connection` | Test Frappe connection with provided credentials |
 | `GET` | `/api/printers` | List locally available printers |
-| `GET` | `/api/branches` | Fetch branches from Frappe |
 | `POST` | `/api/service/start` | Start the print worker |
 | `POST` | `/api/service/stop` | Stop the print worker |
 | `GET` | `/api/status` | Get worker status (running, last poll, errors, jobs count) |
@@ -320,7 +317,6 @@ For the best results with thermal printers, create a dedicated Frappe Print Form
         --------------------------------
     </div>
     <br>
-    Branch: {{ doc.branch }}<br>
     Date: {{ doc.posting_date }}<br>
     --------------------------------<br>
     <table>
@@ -369,8 +365,8 @@ For the best results with thermal printers, create a dedicated Frappe Print Form
 
 | Problem | Solution |
 |---|---|
-| **Service won't start** | Check that all configuration fields are filled (URL, keys, branch, printer). Check the terminal output for errors. |
-| **Pick Notes not printing** | Verify the branch name matches exactly. Check that unprinted Pick Notes exist. Look at the print log for errors. |
+| **Service won't start** | Check that all configuration fields are filled (URL, keys, printer). Check the terminal output for errors. |
+| **Pick Notes not printing** | Check that unprinted Pick Notes exist. Look at the print log for errors. |
 | **Duplicate prints** | The service marks Pick Notes as printed after successful dispatch. If the Frappe API call to mark as printed fails, duplicates may occur. Check network stability. |
 
 ---
