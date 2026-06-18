@@ -162,7 +162,6 @@ class PrintWorker:
            d. Mark as printed on the Frappe site.
         3. Update the last-poll timestamp.
         """
-        branch = self.config.get("branch", "")
         printer_name = self.config.get("printer_name", "")
         printer_type = self.config.get("printer_type", "windows")
         printer_address = self.config.get("printer_address", "")
@@ -172,7 +171,7 @@ class PrintWorker:
 
         try:
             pick_notes = self.frappe_client.get_unprinted_pick_notes(
-                branch=branch, limit=5
+                limit=5
             )
         except Exception as exc:
             error_msg = f"Failed to fetch Pick Notes: {exc}"
@@ -182,10 +181,10 @@ class PrintWorker:
             return
 
         if not pick_notes:
-            logger.debug("No unprinted Pick Notes found for branch '%s'.", branch)
+            logger.debug("No unprinted Pick Notes found.")
             return
 
-        logger.info("Found %d unprinted Pick Note(s) for branch '%s'.", len(pick_notes), branch)
+        logger.info("Found %d unprinted Pick Note(s).", len(pick_notes))
 
         for note in pick_notes:
             name = note.get("name", "unknown")
@@ -267,7 +266,6 @@ def build_receipt(doc: dict, config: dict) -> bytes:
     W = config.get("paper_width", 42)
     auto_cut = config.get("auto_cut", True)
     feed_lines = config.get("feed_lines", 3)
-    branch = config.get("branch", "")
 
     p: list[bytes] = []
     sep = ("-" * W).encode("utf-8")
@@ -325,8 +323,6 @@ def build_receipt(doc: dict, config: dict) -> bytes:
     _field("Time", time_str)
     _field("Type", pick_type)
     _field("Operator", operator)
-    if branch:
-        _field("Branch", branch)
 
     # ---- Type-specific fields ----
     if pick_type == "IBT":
