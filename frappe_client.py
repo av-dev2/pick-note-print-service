@@ -3,7 +3,6 @@ Frappe REST API client for the Pick Note Print Service.
 
 Communicates with a remote Frappe site to:
   - Test connectivity and authentication
-  - Fetch available branches
   - Retrieve unprinted Pick Notes
   - Get rendered print format output for a Pick Note
   - Mark a Pick Note as printed
@@ -154,26 +153,13 @@ class FrappeClient:
         user = result.get("message", "unknown")
         return {"user": user, "status": "connected"}
 
-    def get_branches(self) -> list[dict]:
-        """
-        Retrieve the list of branches available for Pick Note filtering.
 
-        Returns:
-            list: A list of branch dicts as returned by the server.
-        """
-        result = self._get(f"{self.API_BASE}.get_branches")
-        message = result.get("message", [])
-        # Normalise — the API may return a list of strings or dicts
-        if message and isinstance(message[0], str):
-            return [{"name": b} for b in message]
-        return message
 
-    def get_unprinted_pick_notes(self, branch: str, limit: int = 5) -> list[dict]:
+    def get_unprinted_pick_notes(self, limit: int = 5) -> list[dict]:
         """
-        Fetch unprinted Pick Notes for the given branch.
+        Fetch unprinted Pick Notes.
 
         Args:
-            branch: The branch name to filter on.
             limit:  Maximum number of Pick Notes to return.
 
         Returns:
@@ -181,7 +167,7 @@ class FrappeClient:
         """
         result = self._get(
             f"{self.API_BASE}.get_unprinted_pick_notes",
-            params={"branch": branch, "limit": limit},
+            params={"limit": limit},
         )
         return result.get("message", [])
 
