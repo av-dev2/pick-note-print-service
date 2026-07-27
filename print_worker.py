@@ -359,11 +359,9 @@ def build_receipt(doc: dict, config: dict) -> bytes:
         if item_name:
             _text(item_name)
 
-        bin_loc = row.get("bin_location") or ""
-        if bin_loc:
-            _field("Bin Code", bin_loc)
+        bin_loc = row.get("bin_location") or "No Bin"
+        _field("Bin Loc", bin_loc)
 
-        _field("Order Qty", str(row.get("ordered_qty", 0)))
         _field("Pick Qty", str(row.get("pick_qty", 0)))
         _text("Qty Picked  : ______________________")
         p.append(sep)
