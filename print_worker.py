@@ -207,6 +207,13 @@ class PrintWorker:
                         ) or ""
                     )
 
+                # — Brand for older Pick Notes created before the Brand field existed
+                for item in doc.get("items", []):
+                    if not item.get("brand") and item.get("item_code"):
+                        item["brand"] = (
+                            self.frappe_client.get_value("Item", item["item_code"], "brand") or ""
+                        )
+
                 # Step 3: Build ESC/POS receipt bytes from document data
                 raw_bytes = build_receipt(doc, self.config)
 
@@ -322,6 +329,16 @@ def build_receipt(doc: dict, config: dict) -> bytes:
     _field("Date", date_str)
     _field("Time", time_str)
     _field("Type", pick_type)
+
+    item_group = doc.get("item_group") or ""
+    if item_group:
+        _field("Category", item_group)
+
+    part = doc.get("pick_note_part") or ""
+    total_parts = doc.get("pick_note_total_parts") or ""
+    if part and total_parts:
+        _field("Part", f"{part}/{total_parts}")
+
     _field("Operator", operator)
 
     # ---- Type-specific fields ----
@@ -351,20 +368,43 @@ def build_receipt(doc: dict, config: dict) -> bytes:
 
     # ---- Items ----
     items = doc.get("items", [])
+    grouped_items: dict[str, list[dict]] = {}
+
     for row in items:
-        item_code = row.get("item_code") or ""
-        item_name = (row.get("item_name") or "")[:W]
+        brand = row.get("brand") or "No Brand"
+        grouped_items.setdefault(brand, []).append(row)
 
-        _text(item_code)
-        if item_name:
-            _text(item_name)
-
-        bin_loc = row.get("bin_location") or "No Bin"
-        _field("Bin Loc", bin_loc)
-
-        _field("Pick Qty", str(row.get("pick_qty", 0)))
-        _text("Qty Picked  : ______________________")
+    for brand in sorted(grouped_items, key=lambda value: value.lower()):
+        p.append(ESC_BOLD_ON)
+        _field("Brand", brand)
+        p.append(ESC_BOLD_OFF)
         p.append(sep)
+        p.append(LF)
+
+        rows = sorted(
+            grouped_items[brand],
+            key=lambda row: (
+                (row.get("item_name") or "").lower(),
+                row.get("item_code") or "",
+            ),
+        )
+
+        for row in rows:
+            item_code = row.get("item_code") or ""
+            item_name = (row.get("item_name") or "")[:W]
+
+            _text(item_code)
+            if item_name:
+                _text(item_name)
+
+            bin_loc = row.get("bin_location") or "No Bin"
+            _field("Bin Loc", bin_loc)
+
+            _field("Pick Qty", str(row.get("pick_qty", 0)))
+            _text("Qty Picked  : ______________________")
+            p.append(sep)
+            p.append(LF)
+
         p.append(LF)
 
     # ---- Total ----
