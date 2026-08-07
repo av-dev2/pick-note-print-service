@@ -368,44 +368,37 @@ def build_receipt(doc: dict, config: dict) -> bytes:
 
     # ---- Items ----
     items = doc.get("items", [])
-    grouped_items: dict[str, list[dict]] = {}
+    rows = sorted(
+        items,
+        key=lambda row: (
+            (row.get("item_name") or "").lower(),
+            row.get("item_code") or "",
+        ),
+    )
 
-    for row in items:
+    for row in rows:
+        item_code = row.get("item_code") or ""
+        item_name = (row.get("item_name") or "")[:W]
+
+        _text(item_code)
+        if item_name:
+            _text(item_name)
+
         brand = row.get("brand") or "No Brand"
-        grouped_items.setdefault(brand, []).append(row)
-
-    for brand in sorted(grouped_items, key=lambda value: value.lower()):
-        p.append(ESC_BOLD_ON)
         _field("Brand", brand)
-        p.append(ESC_BOLD_OFF)
+
+        oem_no = row.get("oem_no") or "N/A"
+        _field("OEM No", oem_no)
+
+        bin_loc = row.get("bin_location") or "No Bin"
+        _field("Bin Loc", bin_loc)
+
+        _field("Pick Qty", str(row.get("pick_qty", 0)))
+        _text("Qty Picked  : ______________________")
         p.append(sep)
         p.append(LF)
 
-        rows = sorted(
-            grouped_items[brand],
-            key=lambda row: (
-                (row.get("item_name") or "").lower(),
-                row.get("item_code") or "",
-            ),
-        )
-
-        for row in rows:
-            item_code = row.get("item_code") or ""
-            item_name = (row.get("item_name") or "")[:W]
-
-            _text(item_code)
-            if item_name:
-                _text(item_name)
-
-            bin_loc = row.get("bin_location") or "No Bin"
-            _field("Bin Loc", bin_loc)
-
-            _field("Pick Qty", str(row.get("pick_qty", 0)))
-            _text("Qty Picked  : ______________________")
-            p.append(sep)
-            p.append(LF)
-
-        p.append(LF)
+    p.append(LF)
 
     # ---- Total ----
     p.append(LF)
